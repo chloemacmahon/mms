@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TO DO Display</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    {% from "navbar.html" import navbar with context %} {{ navbar() }}
+
+    <div class="container mt-4">
+      <h4>TO DO</h4>
+      &nbsp {% from "todo.html" import todo with context %}
+      <div id="accordion">
+        {% for list in content_list%} {{ todo(list, loop.index) }} {% endfor %}
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <form method="post" action="{{ url_for('download_to_do') }}">
+        <div class="form-group">
+          <label for="password">To Do Password:</label>
+          <input
+            type="password"
+            name="password"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Download</button>
+      </form>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    {% from "navbar.html" import navbar with context %} {{ navbar() }}
+
+    <div class="container mt-4">
+      <h4>Create TO DO</h4>
+      &nbsp
+      <form action="{{ url_for('create') }}" method="post">
+        <div class="form-group">
+          <label for="name">To-Do List Name:</label>
+          <input
+            type="text"
+            name="name"
+            id="name"
+            class="form-control"
+            placeholder="Today"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description">To-Do List Description:</label>
+          <input
+            type="text"
+            name="description"
+            id="description"
+            class="form-control"
+            placeholder="Description"
+            required
+          />
+        </div>
+
+        <input type="hidden" name="items" value="{{ content_item }}" />
+
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </body>
+</html>

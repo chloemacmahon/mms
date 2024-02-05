@@ -1,0 +1,52 @@
+{% macro todo(todo, parentLoopIndex) -%} {% from "todo_item.html" import
+todo_item with context %}
+<div class="card">
+  <div
+    class="card-header d-flex justify-content-between align-items-center"
+    id="{{ parentLoopIndex }}"
+  >
+    <h5 class="mb-0">{{ todo.name }}</h5>
+    <form method="post" action="{{ url_for('delete_list') }}" class="ml-auto">
+      <input type="hidden" name="todoListIndex" value="{{ todo.id }}" />
+      <button type="submit" class="btn btn-link p-0">
+        <i class="fas fa-trash-alt text-danger"></i>
+      </button>
+    </form>
+    <button
+      class="btn btn-secondary"
+      onclick="toggleCollapse({{ parentLoopIndex }})"
+    >
+      <span id="file-icon{{ parentLoopIndex }}">&#9660;</span>
+    </button>
+  </div>
+  <div id="collapse{{ parentLoopIndex }}" class="collapse">
+    <div class="card-body">
+      <h5 class="mb-0">{{ todo.description }}</h5>
+
+      {% for item in todo.items %} {{ todo_item(item,
+      parentLoopIndex*100+loop.index, todo.id) }} {% endfor %}
+
+      <form method="post" action="{{ url_for('add_item') }}">
+        <div class="form-group">
+          <label for="item_description">Item Description:</label>
+          <input
+            type="text"
+            name="item_description"
+            class="form-control"
+            required
+          />
+        </div>
+        <input type="hidden" name="todoIndex" value="{{ todo.id }}" />
+        <button type="submit" class="btn btn-primary">Add Item</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+  function toggleCollapse(index) {
+    $("#collapse" + String(index)).collapse("toggle");
+  }
+</script>
+{% endblock %} {%- endmacro %}
