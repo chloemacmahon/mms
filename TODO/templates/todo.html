@@ -9,9 +9,21 @@ import todo_item with context %}
     <form method="post" action="{{ url_for('edit_list') }}">
       <div class="form-group">
         <label for="name">Name:</label>
-        <input type="text" name="name" class="form-control" required />
+        <input
+          type="text"
+          name="name"
+          class="form-control"
+          value="{{todo.name}}"
+          required
+        />
         <label for="description">Description:</label>
-        <input type="text" name="description" class="form-control" required />
+        <input
+          type="text"
+          name="description"
+          class="form-control"
+          value="{{todo.description}}"
+          required
+        />
       </div>
       <input type="hidden" name="todoIndex" value="{{ todo.id }}" />
       <button type="submit" class="btn btn-link p-0 edit-button ml-auto">

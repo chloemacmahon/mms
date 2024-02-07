@@ -3,7 +3,13 @@ from flask_session import Session
 from flask_bootstrap import Bootstrap
 from model.item import Item
 from model.to_do_list import TO_DO_List
-import utilities
+import json
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+import base64
+
 
 app = Flask(__name__)
 Bootstrap(app)
@@ -102,8 +108,20 @@ def edit_todo():
     toDoIndex = int(request.form.get('todoItemIndex'))
     to_do_lists = session.get("to_do_lists", [])
 
-    to_do_lists = utilities.edit_todo(index, toDoIndex, to_do_lists, description, name)
-    
+    list_obj = next((obj for obj in to_do_lists if obj.id == index), None)
+    if list_obj:
+        to_do_lists.remove(list_obj)
+        items = list_obj.items if list_obj.items else []    
+        list_item = next((obj for obj in items if obj.id == toDoIndex), None)
+        if list_item:
+            items.remove(list_item)
+            list_item.description = description
+            list_item.name = name
+            items.append(list_item)
+            list_obj.items = items
+            to_do_lists.append(list_obj)
+
+
     session["to_do_lists"] = to_do_lists
 
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
@@ -113,7 +131,17 @@ def check_item():
     index = int(request.form.get('todoItemParentIndex'))
     toDoIndex = int(request.form.get('todoItemIndex'))
     to_do_lists = session.get("to_do_lists", [])
-    to_do_lists = utilities.mark_as_complete(index, toDoIndex, to_do_lists)
+    list_obj = next((obj for obj in to_do_lists if obj.id == index), None)
+    if list_obj:
+        to_do_lists.remove(list_obj)
+        items = list_obj.items if list_obj.items else []    
+        list_item = next((obj for obj in items if obj.id == toDoIndex), None)
+        if list_item:
+            items.remove(list_item)
+            list_item.completed = not list_item.completed
+            items.append(list_item)
+            list_obj.items = items
+            to_do_lists.append(list_obj)
     session["to_do_lists"] = to_do_lists
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
 
@@ -122,7 +150,15 @@ def delete_item():
     index = int(request.form.get('todoItemParentIndex'))
     toDoIndex = int(request.form.get('todoItemIndex'))
     to_do_lists = session.get("to_do_lists", [])
-    to_do_lists = utilities.delete_to_do_item(index, toDoIndex, to_do_lists)
+    list_obj = next((obj for obj in to_do_lists if obj.id == index), None)
+    if list_obj:
+        to_do_lists.remove(list_obj)
+        items = list_obj.items if list_obj.items else []    
+        list_item = next((obj for obj in items if obj.id == toDoIndex), None)
+        if list_item:
+            items.remove(list_item)
+            list_obj.items = items
+            to_do_lists.append(list_obj)
     session["to_do_lists"] = to_do_lists
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
 
@@ -141,7 +177,9 @@ def set_edit_index():
 def delete_list():
     index = int(request.form.get('todoListIndex'))
     to_do_lists = session.get("to_do_lists", [])
-    to_do_lists = utilities.delete_to_do_list(index, to_do_lists)
+    list_obj = next((obj for obj in to_do_lists if obj.id == index), None)
+    if list_obj:
+        to_do_lists.remove(list_obj)
     session["to_do_lists"] = to_do_lists
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
 
@@ -149,7 +187,31 @@ def delete_list():
 @app.route('/download',  methods=['POST'])
 def download_to_do():
     password = str(hash(request.form.get('password')))
-    encrypt = utilities.build_file(session.get("to_do_lists", []), password)
+
+    content = []
+    to_do_lists = session.get("to_do_lists", [])
+    for to_do_list in to_do_lists:
+        content.append(to_do_list.to_dict())
+
+    json_content = json.dumps(content, indent=2).encode('utf-8')
+
+    salt = b'todo'
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        iterations=10000,
+        salt=salt,
+        length=32,
+        backend=default_backend()
+    )
+    key = kdf.derive(password.encode())
+    
+    encoded_key = base64.urlsafe_b64encode(key)
+    
+    cipher = Fernet(encoded_key)
+
+    encrypted_data = cipher.encrypt(json_content)
+
+    encrypt = encrypted_data
     temp_file_path = 'temp_file.txt'
     with open(temp_file_path, 'wb') as file:
         file.write(encrypt)
@@ -170,7 +232,28 @@ def upload():
         encrypted_data = file.read()
 
     try :
-        to_do_lists = utilities.read_file(encrypted_data, password)
+
+        salt = b'todo'
+        kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        iterations=10000,
+        salt=salt,
+        length=32,
+        backend=default_backend()
+        )   
+        key = kdf.derive(password.encode())
+        
+        # Encode the key to make it suitable for Fernet
+        encoded_key = base64.urlsafe_b64encode(key)
+        
+        cipher = Fernet(encoded_key)
+
+        decrypted_data = cipher.decrypt(encrypted_data)
+        json_content = json.loads(decrypted_data.decode('utf-8'))
+        to_do_lists = []
+        for item in json_content:
+            to_do_list = TO_DO_List(item['id'], item['name'], item['description'], item['items'])
+            to_do_lists.append(to_do_list)
         session["to_do_lists"] = to_do_lists
         return render_template('TO_DO_display.html', content_list=session.get("to_do_lists", []))
     except:
