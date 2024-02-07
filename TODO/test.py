@@ -37,6 +37,21 @@ if not testItem.completed:
 else:
     print("Mark as complete to False: Failed")
 
+
+# Test edit_item
+    
+to_do_list = utilities.edit_todo(0, 1, test_list, "new_name", "new_description")
+testItem = get_item(0, 1, to_do_list)
+if not testItem.description == "new_dscription":
+    print("Edit description: Passed")
+else:
+    print("Edit description: Failed")
+
+if not testItem.name == "new_dscription":
+    print("Edit name: Passed")
+else:
+    print("Edit name: Failed")
+
 # Test delete_to_do_item 
 to_do_list = utilities.delete_to_do_item(0, 0, test_list)
 if len(to_do_list[0].items) == 1:

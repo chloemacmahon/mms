@@ -12,6 +12,13 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+
+@app.route('/')
+def home():
+    if not session.get("to_do_lists", []):
+        session.pop("to_do_lists", None)
+    return render_template('index.html', title='Home')
+
 @app.route('/display', methods=['GET', 'POST'])
 def display():
     if session.get("to_do_lists"):
@@ -43,6 +50,7 @@ def create():
 
 @app.route('/add_item', methods=['POST'])
 def add_item():
+    item_name = request.form.get('item_name')
     item_description = request.form.get('item_description')
     
     index = int(request.form.get('todoIndex'))
@@ -54,13 +62,49 @@ def add_item():
         to_do_lists.remove(list_obj)
         items = list_obj.items if list_obj.items else []
         if len(items) > 0:
-            new_item = Item(items[-1].id +1,item_description, False)
+            new_item = Item(items[-1].id +1,item_name, item_description, False)
         else:
-            new_item = Item(0,item_description, False)
+            new_item = Item(0,item_name, item_description, False)
         items.append(new_item)
         list_obj.items = items
         to_do_lists.append(list_obj)
         session["to_do_lists"] = to_do_lists
+
+    return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
+
+
+@app.route('/edit_list', methods=['POST'])
+def edit_list():
+    name = request.form.get('name')
+    description = request.form.get('description')
+    
+    index = int(request.form.get('todoIndex'))
+    to_do_lists = session.get("to_do_lists", [])
+
+    list_obj = next((obj for obj in to_do_lists if obj.id == index), None)
+
+    if list_obj:
+        to_do_lists.remove(list_obj)
+        list_obj.name = name
+        list_obj.description = description
+        to_do_lists.append(list_obj)
+        session["to_do_lists"] = to_do_lists
+
+    return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
+
+
+@app.route('/edit_todo', methods=['POST'])
+def edit_todo():
+    name = request.form.get('name')
+    description = request.form.get('description')
+    
+    index = int(request.form.get('todoItemParentIndex'))
+    toDoIndex = int(request.form.get('todoItemIndex'))
+    to_do_lists = session.get("to_do_lists", [])
+
+    to_do_lists = utilities.edit_todo(index, toDoIndex, to_do_lists, description, name)
+    
+    session["to_do_lists"] = to_do_lists
 
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
 
@@ -81,6 +125,17 @@ def delete_item():
     to_do_lists = utilities.delete_to_do_item(index, toDoIndex, to_do_lists)
     session["to_do_lists"] = to_do_lists
     return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"))
+
+@app.route('/delete_all', methods=['POST'])
+def delete_all():
+    session["to_do_lists"] = []
+    return render_template('index.html', title='Home')
+
+@app.route('/set_edit_index', methods=['POST'])
+def set_edit_index():
+    index = int(request.form.get('todoListIndex'))
+    session["edit_index"] = index
+    return render_template('TO_DO_display.html', content_list=session.get("to_do_lists"), edit_index=index )
 
 @app.route('/delete_list', methods=['POST'])
 def delete_list():
@@ -121,11 +176,7 @@ def upload():
     except:
         return render_template('error.html', error_message="Incorrect password for TO DO items.")
 
-@app.route('/')
-def home():
-    if not session.get("to_do_lists", []):
-        session.pop("to_do_lists", None)
-    return render_template('index.html', title='Home')
+
 
 if __name__ == "__main__":
     app.run(debug=True)

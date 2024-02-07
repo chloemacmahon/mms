@@ -25,9 +25,13 @@
 
     <div class="container mt-4">
       <h4>TO DO</h4>
-      &nbsp {% from "todo.html" import todo with context %}
-      <div id="accordion">
-        {% for list in content_list%} {{ todo(list, loop.index) }} {% endfor %}
+      <div id="accordion" class="row">
+        {% for list in content_list %}
+        <div class="col-lg-4 col-md-6 col-sm-12">
+          {% from "todo.html" import todo with context %} {{ todo(list,
+          loop.index, edit_index) }}
+        </div>
+        {% endfor %}
       </div>
     </div>
 
@@ -42,9 +46,15 @@
             required
           />
         </div>
-
         <button type="submit" class="btn btn-primary">Download</button>
       </form>
+      &nbsp
+      <form method="post" action="{{ url_for('delete_all') }}">
+        <button type="submit" class="btn btn-danger">
+          Delete all <i class="fas fa-pencil-alt"></i>
+        </button>
+      </form>
+      &nbsp
     </div>
   </body>
 </html>

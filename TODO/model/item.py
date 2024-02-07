@@ -1,13 +1,15 @@
 
 class Item :
-    def __init__(self, id, description, completed):
+    def __init__(self, id, name, description, completed):
         self.id = id
+        self.name = name
         self.description = description
         self.completed = completed
 
     def to_dict(self):
         return {
             'id': self.id,
+            'name': self.name,
             'description': self.description,
             'completed': self.completed,
         }
